@@ -292,6 +292,8 @@
   }
   .conv-item .c-actions .act-btn:hover { background: rgba(0,0,0,.06); color: var(--text-secondary); }
   .conv-item.active { background: var(--bg-active); color: var(--text-primary); }
+  .new-message-row { padding: 10px 20px; font-size: 13px; }
+  .new-message-row.active { background: var(--accent-light); color: var(--accent); }
   .conv-item .c-dot {
     width: 6px; height: 6px; border-radius: 50%; background: var(--border);
     flex-shrink: 0;
@@ -1586,7 +1588,7 @@
   <!-- ===== Icon Rail ===== -->
   <div class="icon-rail">
     <div class="rail-topbar">
-      <div class="rail-logo" onclick="showView('home')" title="AionUi · 回到首页">
+      <div class="rail-logo" onclick="selectNewMessage()" title="AionUi · 回到首页">
         <svg viewBox="0 0 80 80" fill="none">
           <path d="M40 20 Q38 22 25 40 Q23 42 26 42 L30 42 Q32 40 40 30 Q48 40 50 42 L54 42 Q57 42 55 40 Q42 22 40 20" fill="white"/>
           <circle cx="40" cy="46" r="3" fill="white"/>
@@ -1637,11 +1639,16 @@
       <div id="panel-chat" class="sidebar-panel">
 
         <div class="tab-toolbar">
-          <div class="tb-action new-conv-btn" onclick="showView('home')">＋ 新会话</div>
           <div class="tb-search" title="搜索会话">🔍</div>
         </div>
-        <div class="sidebar-divider"></div>
 
+        <!-- 新消息（固定行，点击回首页） -->
+        <div class="conv-item new-message-row" onclick="selectNewMessage()">
+          <span style="font-size:15px; margin-right:6px;">✏️</span>
+          <span class="c-label" style="font-weight:600;">新消息</span>
+        </div>
+
+        <div class="sidebar-divider"></div>
         <div class="section-label">工作区</div>
         <!-- Folder: AionUi (has unread → auto expanded) -->
         <div class="folder-item" onclick="toggleFolder(this)">
@@ -1737,13 +1744,20 @@
       <div id="panel-people" class="sidebar-panel active">
 
         <div class="tab-toolbar">
-          <div class="tb-action" onclick="showView('home')" title="回到首页，选择助手开始新对话">＋ 新会话</div>
           <div class="tb-search" title="搜索助手和团队">🔍</div>
         </div>
+
+        <!-- 新消息（固定行，点击回首页） -->
+        <div class="conv-item new-message-row active" onclick="selectNewMessage()">
+          <span style="font-size:15px; margin-right:6px;">✏️</span>
+          <span class="c-label" style="font-weight:600;">新消息</span>
+        </div>
+
+        <div class="sidebar-divider"></div>
         <div class="section-label">助手 <span class="section-add" onclick="event.stopPropagation(); openCreateAssistant();" title="创建助手">＋</span></div>
 
-        <!-- AionCLI (秘书，始终第一位，默认展开) -->
-        <div class="person-item expanded" onclick="togglePerson(this)" style="background:var(--accent-light);">
+        <!-- AionCLI (秘书，始终第一位) -->
+        <div class="person-item" onclick="togglePerson(this)" style="background:var(--accent-light);">
           <div class="p-avatar cli-logo" style="box-shadow:0 0 0 2px var(--accent);"><img src="../../src/renderer/assets/logos/brand/aion.svg"></div>
           <div class="p-info">
             <div class="p-name">AionCLI <span style="font-size:10px; color:var(--accent); font-weight:500; background:#fff; padding:1px 6px; border-radius:4px; margin-left:4px;">秘书</span></div>
@@ -1751,7 +1765,7 @@
           </div>
           <div class="p-actions"><span class="act-btn" title="更多">···</span></div>
         </div>
-        <div class="person-convs" style="display:block;">
+        <div class="person-convs" style="display:none;">
           <div class="pconv">
             <span class="pc-dot"></span>
             <span class="pc-label">帮我规划下周工作</span>
@@ -3164,9 +3178,17 @@
     document.getElementById('view-group').classList.toggle('active', name === 'group');
     document.getElementById('view-solo').classList.toggle('active', name === 'solo');
     if (name === 'home') {
-      document.querySelectorAll('.conv-item.active').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.conv-item.active:not(.new-message-row)').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.pconv.active').forEach(el => el.classList.remove('active'));
     }
+  }
+
+  /* ---- "新消息" row click ---- */
+  function selectNewMessage() {
+    document.querySelectorAll('.conv-item.active').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.pconv.active').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.new-message-row').forEach(el => el.classList.add('active'));
+    showView('home');
   }
 
   /* ---- Staff card click → jump to chat ---- */
@@ -3287,13 +3309,12 @@
     setTimeout(() => document.addEventListener('click', closePopup), 0);
   }
 
-  // Click "＋ 新会话" → home
-  document.querySelector('.new-conv-btn').addEventListener('click', () => showView('home'));
-  // Click conv-item → chat or group view
-  document.querySelectorAll('.conv-item').forEach(el => {
+  // Click conv-item → chat or group view (skip new-message-row, handled by onclick)
+  document.querySelectorAll('.conv-item:not(.new-message-row)').forEach(el => {
     el.addEventListener('click', function(e) {
       if (e.target.closest('.act-btn')) return;
       document.querySelectorAll('.conv-item.active').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.pconv.active').forEach(p => p.classList.remove('active'));
       el.classList.add('active');
       showView(isGroupConv(el) ? 'group' : 'chat');
     });
@@ -3302,6 +3323,7 @@
   document.querySelectorAll('.pconv').forEach(el => {
     el.addEventListener('click', function(e) {
       if (e.target.closest('.act-btn')) return;
+      document.querySelectorAll('.conv-item.active').forEach(c => c.classList.remove('active'));
       document.querySelectorAll('.pconv.active').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.conv-item.active').forEach(c => c.classList.remove('active'));
       el.classList.add('active');
