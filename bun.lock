@@ -157,6 +157,9 @@
     "packages/desktop": {
       "name": "@aionui/desktop",
       "version": "0.0.0",
+      "dependencies": {
+        "@aionui/web-host": "workspace:*",
+      },
     },
     "packages/web-host": {
       "name": "@aionui/web-host",

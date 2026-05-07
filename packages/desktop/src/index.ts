@@ -24,7 +24,8 @@ import { initializeProcess } from './process';
 import { ProcessConfig } from './process/utils/initStorage';
 import { loadShellEnvironmentAsync, logEnvironmentDiagnostics, mergePaths } from './process/utils/shellEnv';
 import { registerWindowMaximizeListeners, disposeAllTeamSessions } from '@process/bridge';
-import { BackendLifecycleManager } from '@process/backend';
+import { BackendLifecycleManager } from '@aionui/web-host';
+import { resolveBinaryPath } from '@process/backend';
 import './process/bridge/feedbackBridge';
 import { wasLaunchedAtLogin } from '@process/bridge/applicationBridge';
 import { onCloseToTrayChanged, onLanguageChanged } from './process/bridge/systemSettingsBridge';
@@ -184,7 +185,15 @@ let isExplicitQuit = false;
 let appReadyDone = false;
 
 let mainWindow: BrowserWindow;
-const backendManager = new BackendLifecycleManager();
+const backendManager = new BackendLifecycleManager(
+  {
+    version: app.getVersion(),
+    isPackaged: app.isPackaged,
+    resourcesPath: process.resourcesPath,
+    userDataPath: app.getPath('userData'),
+  },
+  resolveBinaryPath,
+);
 let disposeCronResumeListener: (() => void) | null = null;
 
 // Flag tracking whether the backend subprocess started successfully. Read by
