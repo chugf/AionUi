@@ -1,48 +1,95 @@
-import type { AppMetadata, WebUIConfig } from '../types.js';
-
 /**
- * Reset password (for CLI --resetpass / desktop GUI reset button)
- * M5: implementation will generate new password + bcrypt hash + save to config
+ * Public auth API (UC-3 contract, frozen signatures).
+ *
+ * Five entry points are exposed here:
+ *   - resetPassword   : CLI `--resetpass` + desktop GUI reset button
+ *   - changePassword  : desktop preload `webuiChangePassword` IPC
+ *   - verifyPassword  : internal /api/auth/login handler
+ *   - loadConfig      : exported for session/rate-limit/orchestration reuse
+ *   - saveConfig      : exported for session/rate-limit/orchestration reuse
+ *
+ * Implementation notes (M5):
+ *   - Storage: userDataPath/webui.config.json (see ./config.ts)
+ *   - Hashing: bcryptjs (matches legacy webserver dependency)
+ *   - No HTTP dependency; pure I/O + crypto.
  */
-export async function resetPassword(opts: { app: AppMetadata }): Promise<string> {
-  throw new Error('M5: resetPassword not implemented yet');
+
+import bcrypt from 'bcryptjs';
+import type { AppMetadata, WebUIConfig } from '../types.js';
+import { readConfig, writeConfig } from './config.js';
+
+export { readConfig as loadConfig, writeConfig as saveConfig };
+
+const BCRYPT_SALT_ROUNDS = 10; // matches legacy resetPasswordCLI.ts hashPassword
+const PASSWORD_LENGTH = 12;
+const PASSWORD_ALPHABET =
+  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+function generateRandomPassword(): string {
+  const out: string[] = [];
+  for (let i = 0; i < PASSWORD_LENGTH; i++) {
+    const idx = Math.floor(Math.random() * PASSWORD_ALPHABET.length);
+    out.push(PASSWORD_ALPHABET[idx]);
+  }
+  return out.join('');
 }
 
 /**
- * Change password (for desktop GUI webuiChangePassword IPC)
- * M5: implementation will verify old password + hash new password + save to config
+ * Reset password to a freshly generated value. Persists immediately.
+ * Returns the plaintext password (caller displays to user / returns to CLI).
+ */
+export async function resetPassword(opts: { app: AppMetadata }): Promise<string> {
+  const cfg = await readConfig(opts.app);
+  const newPassword = generateRandomPassword();
+  const hash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+  const next: WebUIConfig = {
+    ...cfg,
+    passwordHash: hash,
+    adminUsername: cfg.adminUsername || 'admin',
+    passwordUpdatedAt: new Date().toISOString(),
+  };
+  await writeConfig(opts.app, next);
+  return newPassword;
+}
+
+/**
+ * Change password after verifying the old one.
+ * Throws on verification failure; caller maps to the correct HTTP status.
  */
 export async function changePassword(opts: {
   app: AppMetadata;
   oldPassword: string;
   newPassword: string;
 }): Promise<void> {
-  throw new Error('M5: changePassword not implemented yet');
+  const cfg = await readConfig(opts.app);
+  if (!cfg.passwordHash) {
+    throw new Error('PASSWORD_NOT_INITIALIZED');
+  }
+  const ok = await bcrypt.compare(opts.oldPassword, cfg.passwordHash);
+  if (!ok) {
+    throw new Error('INVALID_OLD_PASSWORD');
+  }
+  const hash = await bcrypt.hash(opts.newPassword, BCRYPT_SALT_ROUNDS);
+  await writeConfig(opts.app, {
+    ...cfg,
+    passwordHash: hash,
+    passwordUpdatedAt: new Date().toISOString(),
+  });
 }
 
 /**
- * Verify password (for /api/auth/login internal use)
- * M5: implementation will compare bcrypt hash
+ * Compare password against stored bcrypt hash. Returns false for missing config,
+ * empty hash, or mismatched password; never throws on those paths.
  */
 export async function verifyPassword(opts: {
   app: AppMetadata;
   password: string;
 }): Promise<boolean> {
-  throw new Error('M5: verifyPassword not implemented yet');
-}
-
-/**
- * Load WebUI config (password hash, rate limit state, etc.)
- * M5: implementation will read from userDataPath/webui.config.json
- */
-export async function loadConfig(opts: { app: AppMetadata }): Promise<WebUIConfig> {
-  throw new Error('M5: loadConfig not implemented yet');
-}
-
-/**
- * Save WebUI config
- * M5: implementation will write to userDataPath/webui.config.json
- */
-export async function saveConfig(opts: { app: AppMetadata; config: WebUIConfig }): Promise<void> {
-  throw new Error('M5: saveConfig not implemented yet');
+  const cfg = await readConfig(opts.app);
+  if (!cfg.passwordHash) return false;
+  try {
+    return await bcrypt.compare(opts.password, cfg.passwordHash);
+  } catch {
+    return false;
+  }
 }
