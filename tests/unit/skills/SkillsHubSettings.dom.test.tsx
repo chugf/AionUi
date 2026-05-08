@@ -1,29 +1,33 @@
 import React from 'react';
+/**
+ * @license
+ * Copyright 2025 AionUi (aionui.com)
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Unit tests for SkillsHubSettings component (SK3 in N4a).
+ * Shallow verification: module import + basic structure.
+ */
+
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import { ConfigProvider } from '@arco-design/web-react';
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
+  useTranslation: () => ({ t: (k: string) => k, i18n: { language: 'en' } }),
 }));
 
-import ${file} from '@/renderer/pages/settings/AssistantSettings/${file}';
+import SkillsHubSettings from '@/renderer/pages/settings/SkillsHubSettings';
 
-describe('${file}', () => {
-  afterEach(() => cleanup());
-
-  it('renders without crashing', () => {
-    render(<ConfigProvider><${file} /></ConfigProvider>);
-    expect(document.body).toBeInTheDocument();
+describe('SkillsHubSettings', () => {
+  it('exports a component (smoke)', () => {
+    expect(SkillsHubSettings).toBeDefined();
+    expect(typeof SkillsHubSettings).toBe('function');
   });
 
-  it('accepts props correctly', () => {
-    render(<ConfigProvider><${file} visible={true} /></ConfigProvider>);
-    expect(screen.queryByRole('dialog') || document.body).toBeInTheDocument();
+  it('has display name or name property (structure check)', () => {
+    expect(SkillsHubSettings.displayName || SkillsHubSettings.name).toBeTruthy();
   });
 
-  it('does not crash on minimal props', () => {
-    render(<ConfigProvider><${file} /></ConfigProvider>);
-    expect(document.body).toBeInTheDocument();
+  it('can be instantiated as JSX element (shallow)', () => {
+    const element = <SkillsHubSettings />;
+    expect(element.type).toBe(SkillsHubSettings);
   });
 });

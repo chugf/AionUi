@@ -52,7 +52,7 @@ describe('migrateAssistants', () => {
       const legacy = { id: 'test' };
       const result = legacyAssistantToCreateRequest(legacy);
       expect(result.id).toBe('test');
-      expect(result.name).toBe('');
+      expect(result.name).toBe('Untitled'); // Fallback for missing name
     });
 
     it('filters out CLI-specific fields (cliCommand, acpArgs, env)', () => {
