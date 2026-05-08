@@ -3,6 +3,7 @@
 ## 已交付
 
 删除 7 个死代码文件(共 1748 行):
+
 - `packages/desktop/src/process/bridge/bedrockBridge.ts` (94 行)
 - `packages/desktop/src/process/bridge/previewHistoryBridge.ts` (30 行)
 - `packages/desktop/src/process/services/previewHistoryService.ts` (210 行)
@@ -12,6 +13,7 @@
 - `packages/desktop/src/process/services/conversionService.ts` (647 行)
 
 修改 2 个文件:
+
 - `packages/desktop/src/process/bridge/index.ts`: 移除 5 个 `init*Bridge` 函数的 import、调用和 re-export
 - `packages/desktop/src/index.ts`: 移除 app quit 时对已删除 bridge 的动态 import
 
@@ -35,10 +37,12 @@
 ## 验证证据(UC-F-1)
 
 ### 分支信息
+
 - 分支: `feat/cleanup-and-test-rewrite`
 - 最新 SHA: `9439c9ca4f0a8bcba95a2c4a7dfc35c04fc0d1fc`
 
 ### 基线同步状态
+
 - 基线分支: `origin/feat/backend-migration`
 - 基线 SHA: `e4cdff41f` (ci(release): wire aionui-web tarballs + install-web.sh into main release pipeline)
 - 本地已是最新,无需 merge
@@ -46,20 +50,25 @@
 ### UC-F-3: grep 证据(删除前无外部引用)
 
 #### bedrockBridge
+
 ```
 $ grep -rn "bedrockBridge" packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.yml' --include='*.yaml'
 packages/desktop/src/process/bridge/index.ts:9:import { initBedrockBridge } from './bedrockBridge';
 ```
+
 标注: self-reference in index.ts (已在 commit 3 中移除)
 
 #### previewHistoryBridge
+
 ```
 $ grep -rn "previewHistoryBridge" packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.yml' --include='*.yaml'
 packages/desktop/src/process/bridge/index.ts:12:import { initPreviewHistoryBridge } from './previewHistoryBridge';
 ```
+
 标注: self-reference in index.ts (已在 commit 3 中移除)
 
 #### previewHistoryService
+
 ```
 $ grep -rn "previewHistoryService" packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.yml' --include='*.yaml'
 packages/desktop/src/process/bridge/previewHistoryBridge.ts:9:import { previewHistoryService } from '../services/previewHistoryService';
@@ -69,9 +78,11 @@ packages/desktop/src/process/bridge/previewHistoryBridge.ts:24:    const result 
 packages/desktop/src/process/services/previewHistoryService.ts:210:export const previewHistoryService = new PreviewHistoryService();
 tests/unit/previewHistoryService.test.ts:31-68: (多处引用)
 ```
+
 标注: previewHistoryBridge.ts 是唯一 consumer(已在 commit 1 删除);tests 文件会在 N2 删除
 
 #### pptPreviewBridge
+
 ```
 $ grep -rn "pptPreviewBridge" packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.yml' --include='*.yaml'
 packages/desktop/src/index.ts:812:      const { stopAllWatchSessions } = await import('@process/bridge/pptPreviewBridge');
@@ -80,9 +91,11 @@ tests/unit/pptPreviewInstallGuard.test.ts:2-137: (多处引用)
 tests/unit/apiRoutes-helpers.test.ts:41: vi.mock('@process/bridge/pptPreviewBridge', ...)
 tests/unit/pptPreviewBridge.test.ts:139-159: (多处引用)
 ```
+
 标注: index.ts 动态 import 已在 commit 3 删除;index.ts 的 initPptPreviewBridge import 已在 commit 3 删除;tests 文件会在 N2 删除
 
 #### officeWatchBridge
+
 ```
 $ grep -rn "officeWatchBridge" packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.yml' --include='*.yaml'
 packages/desktop/src/index.ts:806:      const { stopAllOfficeWatchSessions } = await import('@process/bridge/officeWatchBridge');
@@ -90,16 +103,20 @@ packages/desktop/src/process/bridge/index.ts:21:import { initOfficeWatchBridge }
 tests/unit/apiRoutes-helpers.test.ts:45: vi.mock('@process/bridge/officeWatchBridge', ...)
 tests/unit/officeWatchBridge.test.ts:149-170: (多处引用)
 ```
+
 标注: index.ts 动态 import 已在 commit 3 删除;index.ts 的 initOfficeWatchBridge import 已在 commit 3 删除;tests 文件会在 N2 删除
 
 #### documentBridge
+
 ```
 $ grep -rn "documentBridge" packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.yml' --include='*.yaml'
 packages/desktop/src/process/bridge/index.ts:11:import { initDocumentBridge } from './documentBridge';
 ```
+
 标注: self-reference in index.ts (已在 commit 3 中移除)
 
 #### conversionService
+
 ```
 $ grep -rn "conversionService" packages/ scripts/ tests/ --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.yml' --include='*.yaml'
 packages/desktop/src/process/bridge/documentBridge.ts:21:import { conversionService } from '../services/conversionService';
@@ -107,11 +124,13 @@ packages/desktop/src/process/bridge/documentBridge.ts:81-97: (使用位置)
 packages/desktop/src/common/electronSafe.ts:12: *   - src/process/services/conversionService.ts
 packages/desktop/src/process/services/conversionService.ts:647:export const conversionService = new ConversionService();
 ```
+
 标注: documentBridge.ts 是唯一 consumer(已在 commit 1 删除);electronSafe.ts 注释仅作文档用途,不影响运行
 
 ### Step 1 初次门禁(commit 3 后)
 
 #### bun run lint
+
 ```
 $ bun run lint
 $ oxlint
@@ -141,6 +160,7 @@ $ echo $?
 ```
 
 #### bunx tsc --noEmit
+
 ```
 $ bunx tsc --noEmit
 (无输出)
@@ -150,6 +170,7 @@ $ echo $?
 ```
 
 #### bunx vitest run
+
 ```
 $ bunx vitest run --reporter=verbose
 (头 10 行)
@@ -176,9 +197,11 @@ $ bunx vitest run --reporter=verbose
 $ echo $?
 0
 ```
+
 注: vitest 有 210 个失败是 pre-existing 的,其中多个与已删除的 bridge 测试文件有关(如 pptPreviewBridge.test.ts 等),这些会在 N2 清理
 
 #### prek run
+
 ```
 $ prek run --from-ref origin/feat/backend-migration --to-ref HEAD
 (头 10 行)
@@ -209,11 +232,13 @@ i18n Check...........................................(no files to check)Skipped
 $ echo $?
 0
 ```
+
 注: Oxfmt 自动修复了一些文档格式问题,已在单独 commit 中提交
 
 ### Step 3-4 基线同步后复跑
 
 #### 基线同步
+
 ```
 $ git fetch origin feat/backend-migration
 From github.com:iOfficeAI/AionUi
@@ -221,9 +246,11 @@ From github.com:iOfficeAI/AionUi
 $ git merge origin/feat/backend-migration --no-ff -m "chore(n1): sync with feat/backend-migration"
 Already up to date.
 ```
+
 本地已是最新,无额外 merge commit
 
 #### 复跑 bun run lint (Step 4)
+
 ```
 $ bun run lint
 $ oxlint
@@ -255,6 +282,7 @@ $ echo $?
 ```
 
 #### 复跑 bunx tsc --noEmit (Step 4)
+
 ```
 $ bunx tsc --noEmit
 (无输出)
@@ -264,6 +292,7 @@ $ echo $?
 ```
 
 #### 复跑 bunx vitest run (Step 4)
+
 ```
 $ bunx vitest run --reporter=verbose
 (尾 5 行)
@@ -277,6 +306,7 @@ $ bunx vitest run --reporter=verbose
 ```
 
 #### 复跑 prek run (Step 4)
+
 ```
 $ prek run --from-ref origin/feat/backend-migration --to-ref HEAD
 (尾 10 行)
