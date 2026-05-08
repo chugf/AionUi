@@ -181,12 +181,12 @@ const ChatLayout: React.FC<{
     <>
       <ArcoLayout.Header
         className={classNames(
-          'min-h-44px flex items-center justify-between px-16px pt-8px pb-10px gap-16px !bg-1 chat-layout-header chat-layout-header--glass overflow-hidden',
-          layout?.isMobile && 'chat-layout-header--mobile-unified'
+          'flex items-center justify-between gap-8px !bg-1 chat-layout-header chat-layout-header--glass overflow-hidden',
+          layout?.isMobile ? 'min-h-44px px-16px pt-8px pb-10px chat-layout-header--mobile-unified' : 'pl-8px pr-20px py-16px'
         )}
         style={headerPaddingLeft ? { paddingLeft: headerPaddingLeft } : undefined}
       >
-        <div className='shrink-0'>{props.headerLeft}</div>
+        <div className='shrink-0 flex items-center gap-8px'>{props.headerLeft}</div>
         <FlexFullContainer className='h-full min-w-0' containerClassName='flex items-center gap-16px'>
           {!layout?.isMobile && !hasTabs && (
             <ChatTitleEditor
@@ -204,7 +204,7 @@ const ChatLayout: React.FC<{
           )}
           {(hasTabs || layout?.isMobile) && <ConversationTitleMinimap conversationId={conversationId} hideTrigger />}
         </FlexFullContainer>
-        <div className='flex items-center gap-12px shrink-0'>
+        <div className='flex items-center gap-9px shrink-0'>
           {props.headerExtra}
           {(backend || presetAssistant) && (
             <AgentBadge
@@ -218,7 +218,7 @@ const ChatLayout: React.FC<{
           {isDesktop && workspaceEnabled && (
             <button
               type='button'
-              className='workspace-header__toggle'
+              className='chat-layout-header__workspace-toggle'
               aria-label='Toggle workspace'
               onClick={() => dispatchWorkspaceToggleEvent()}
             >
@@ -230,6 +230,64 @@ const ChatLayout: React.FC<{
       {props.tabsSlot !== undefined ? props.tabsSlot : <ConversationTabs />}
     </>
   );
+
+  // 桌面端：header 横跨整个宽度，下面是 chat + workspace 并排
+  // 移动端：保留原有结构（header 只在主内容区上方）
+  if (isDesktop && !isPreviewOpen) {
+    return (
+      <ArcoLayout className='size-full color-black flex flex-col'>
+        {/* Header 横跨整个屏幕宽度 */}
+        <div className='shrink-0 !bg-1'>{headerBlock}</div>
+        {/* 下方：左侧主内容 + 右侧工作空间 */}
+        <div ref={containerRef} className='flex flex-1 relative w-full overflow-hidden min-h-0'>
+          <div
+            className='flex flex-col relative'
+            style={{
+              flexGrow: chatFlex,
+              flexShrink: 0,
+              flexBasis: 0,
+              minWidth: '240px',
+            }}
+          >
+            <ArcoLayout.Content className='flex flex-col flex-1 bg-1 overflow-hidden'>
+              {props.children}
+            </ArcoLayout.Content>
+          </div>
+          {workspaceEnabled && (
+            <div
+              className='relative chat-layout-right-sider-outer'
+              style={{
+                flexGrow: workspaceFlex,
+                flexShrink: 0,
+                flexBasis: rightSiderCollapsed ? '0px' : 0,
+                width: rightSiderCollapsed ? '0px' : undefined,
+                minWidth: rightSiderCollapsed ? '0px' : '220px',
+                overflow: 'hidden',
+                backgroundColor: 'var(--bg-1)',
+                padding: rightSiderCollapsed ? '0' : '8px 8px 8px 0',
+              }}
+            >
+              <div
+                className='chat-layout-right-sider h-full flex flex-col'
+                style={{
+                  borderRadius: '12px',
+                  border: '1px solid var(--color-border-2, #e5e6eb)',
+                  backgroundColor: 'var(--bg-1)',
+                  overflow: 'hidden',
+                }}
+              >
+                {!rightSiderCollapsed &&
+                  createWorkspaceDragHandle({ className: 'absolute left-0 top-0 bottom-0', style: {}, reverse: true })}
+                <ArcoLayout.Content className='h-full !bg-transparent'>
+                  {props.sider}
+                </ArcoLayout.Content>
+              </div>
+            </div>
+          )}
+        </div>
+      </ArcoLayout>
+    );
+  }
 
   return (
     <ArcoLayout
@@ -284,7 +342,7 @@ const ChatLayout: React.FC<{
             </div>
           </>
         ) : (
-          /* Desktop without preview / Mobile */
+          /* Mobile */
           <>
             <div
               className='flex flex-col relative'
@@ -342,23 +400,23 @@ const ChatLayout: React.FC<{
               width: rightSiderCollapsed ? '0px' : isPreviewOpen ? `${Math.round(workspaceWidthPx)}px` : undefined,
               minWidth: rightSiderCollapsed ? '0px' : '220px',
               overflow: 'hidden',
-              padding: rightSiderCollapsed ? '0' : '8px 8px 8px 5px',
+              backgroundColor: 'var(--bg-2)',
+              padding: rightSiderCollapsed ? '0' : '57px 8px 8px 0',
             }}
           >
             <div
               className='chat-layout-right-sider h-full flex flex-col'
               style={{
-                borderRadius: '14px',
-                outline: '1px solid var(--bg-3)',
-                boxShadow: '0 2px 8px 0 rgba(0,0,0,0.06)',
-                backgroundColor: 'var(--bg-2)',
+                borderRadius: '12px',
+                border: '1px solid var(--color-border-2, #e5e6eb)',
+                backgroundColor: 'var(--bg-1)',
                 overflow: 'hidden',
               }}
             >
               {isDesktop &&
                 !rightSiderCollapsed &&
                 createWorkspaceDragHandle({ className: 'absolute left-0 top-0 bottom-0', style: {}, reverse: true })}
-              <ArcoLayout.Content className='h-full'>
+              <ArcoLayout.Content className='h-full !bg-transparent'>
                 {props.sider}
               </ArcoLayout.Content>
             </div>

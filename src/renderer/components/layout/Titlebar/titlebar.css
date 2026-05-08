@@ -32,10 +32,45 @@
 }
 
 .app-titlebar--mac {
-  height: 45px;
-  min-height: 36px;
-  /* Reserve space for macOS traffic light buttons (left side) */
+  height: 44px;
+  min-height: 44px;
   padding-right: 12px;
+}
+
+.app-titlebar--mac-preview {
+  height: 44px;
+  min-height: 44px;
+  padding-right: 12px;
+}
+
+.app-titlebar__traffic-preview {
+  width: 76px;
+  height: var(--titlebar-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 0 76px;
+  pointer-events: none;
+}
+
+.app-titlebar__traffic-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.app-titlebar__traffic-dot--close {
+  background: #ff5f57;
+}
+
+.app-titlebar__traffic-dot--minimize {
+  background: #febc2e;
+}
+
+.app-titlebar__traffic-dot--zoom {
+  background: #28c840;
 }
 
 /* Windows/Linux desktop: taller titlebar so 36px buttons have breathing room,
@@ -116,6 +151,10 @@
   align-items: center;
 }
 
+.app-titlebar--mac .app-titlebar__menu {
+  height: 32px;
+}
+
 .app-titlebar__toolbar {
   display: flex;
   align-items: center;
@@ -140,12 +179,30 @@
   transition: background-color 0.2s ease;
 }
 
+.app-titlebar--mac .app-titlebar__button:not(.app-titlebar__button--mobile) {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
 .app-titlebar__button:hover {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
 .app-titlebar__button:active {
   background-color: rgba(0, 0, 0, 0.14);
+}
+
+.app-titlebar__button--search {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.app-titlebar__button--active {
+  background-color: var(--fill-1);
+  color: var(--text-primary);
 }
 
 [data-theme='dark'] .app-titlebar__button:hover {

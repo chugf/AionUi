@@ -46,6 +46,26 @@
   }
 }
 
+/* Header workspace toggle: pill-shaped button matching Figma design */
+.chat-layout-header__workspace-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 9999px;
+  background-color: var(--fill-1, #f2f3f5);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  -webkit-app-region: no-drag;
+}
+
+.chat-layout-header__workspace-toggle:hover {
+  background-color: var(--bg-3);
+}
+
 /* Workspace open button dropdown styles */
 .workspace-open-dropdown {
   background-color: var(--color-bg-2);

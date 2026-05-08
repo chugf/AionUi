@@ -9,6 +9,7 @@ import {
   MenuFold,
   MenuUnfold,
   Plus,
+  Search,
 } from '@icon-park/react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -16,11 +17,14 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ipcBridge } from '@/common';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import WindowControls from '../WindowControls';
+import ConversationSearchPopover from '@renderer/pages/conversation/GroupedHistory/ConversationSearchPopover';
 import { WORKSPACE_STATE_EVENT, dispatchWorkspaceToggleEvent } from '@renderer/utils/workspace/workspaceEvents';
 import type { WorkspaceStateDetail } from '@renderer/utils/workspace/workspaceEvents';
 import { useLayoutContext } from '@/renderer/hooks/context/LayoutContext';
 import { useNavigationHistory } from '@/renderer/hooks/context/NavigationHistoryContext';
 import { isElectronDesktop, isMacOS } from '@/renderer/utils/platform';
+import { cleanupSiderTooltips } from '@/renderer/utils/ui/siderTooltip';
+import { blurActiveElement } from '@/renderer/utils/ui/focus';
 import './titlebar.css';
 
 interface TitlebarProps {
@@ -67,6 +71,14 @@ const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size =
   </svg>
 );
 
+const MacTrafficLightPreview: React.FC = () => (
+  <div className='app-titlebar__traffic-preview' aria-hidden='true'>
+    <span className='app-titlebar__traffic-dot app-titlebar__traffic-dot--close'></span>
+    <span className='app-titlebar__traffic-dot app-titlebar__traffic-dot--minimize'></span>
+    <span className='app-titlebar__traffic-dot app-titlebar__traffic-dot--zoom'></span>
+  </div>
+);
+
 const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const { t } = useTranslation();
   const appTitle = useMemo(() => 'AionUi', []);
@@ -103,6 +115,8 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const isMacRuntime = isDesktopRuntime && isMacOS();
   // Windows/Linux 显示自定义窗口按钮；macOS 在标题栏给工作区一个切换入口
   const showWindowControls = isDesktopRuntime && !isMacRuntime;
+  // WebUI/browser preview: simulate macOS traffic lights so Figma captures include the desktop shell.
+  const showMacTrafficLightPreview = !isDesktopRuntime && !layout?.isMobile;
   // Titlebar 现在在侧边栏内，工作空间切换由 ChatLayout header 统一处理
   const showWorkspaceButton = workspaceAvailable && !isDesktopRuntime;
 
@@ -120,6 +134,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const showSiderToggle = Boolean(layout?.setSiderCollapsed) && !(layout?.isMobile && isSettingsRoute);
   const showBackToChatButton = Boolean(layout?.isMobile && isSettingsRoute);
   const showNewConversationButton = Boolean(layout?.isMobile && workspaceAvailable);
+  const showHistorySearchButton = Boolean(!layout?.isMobile && !isSettingsRoute);
   const siderTooltip = layout?.siderCollapsed
     ? t('common.expandMore', { defaultValue: 'Expand sidebar' })
     : t('common.collapse', { defaultValue: 'Collapse sidebar' });
@@ -128,6 +143,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const showHistoryNav = Boolean(navigationHistory) && !layout?.isMobile;
   const historyBackTooltip = t('common.historyBack', { defaultValue: 'Back' });
   const historyForwardTooltip = t('common.forward', { defaultValue: 'Forward' });
+  const historySearchTooltip = t('conversation.historySearch.tooltip');
 
   const handleSiderToggle = () => {
     if (!showSiderToggle || !layout?.setSiderCollapsed) return;
@@ -139,6 +155,11 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
       return;
     }
     dispatchWorkspaceToggleEvent();
+  };
+
+  const handleSearchConversationSelect = () => {
+    cleanupSiderTooltips();
+    blurActiveElement();
   };
 
   const handleCreateConversation = () => {
@@ -263,9 +284,9 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
 
   const menuStyle: React.CSSProperties = useMemo(() => {
     if (!isMacRuntime || !showSiderToggle) return {};
-    // macOS: sit the menu buttons right next to the traffic lights (which occupy ~70px).
+    // macOS: reserve native traffic lights plus a small safety gap before custom controls.
     // Mobile keeps its own layout (no traffic lights).
-    const marginLeft = layout?.isMobile ? '0px' : '76px';
+    const marginLeft = layout?.isMobile ? '0px' : '62px';
     return {
       marginLeft,
     };
@@ -280,8 +301,10 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
         'app-titlebar--mobile-conversation': layout?.isMobile && workspaceAvailable,
         'app-titlebar--desktop': isDesktopRuntime,
         'app-titlebar--mac': isMacRuntime,
+        'app-titlebar--mac-preview': showMacTrafficLightPreview,
       })}
     >
+      {showMacTrafficLightPreview && <MacTrafficLightPreview />}
       <div ref={menuRef} className='app-titlebar__menu' style={menuStyle}>
         {showBackToChatButton && (
           <button
@@ -310,6 +333,25 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
               <SidebarIcon size={iconSize} strokeWidth={desktopIconStroke} />
             )}
           </button>
+        )}
+        {showHistorySearchButton && (
+          <ConversationSearchPopover
+            onConversationSelect={handleSearchConversationSelect}
+            renderTrigger={({ onClick, isActive }) => (
+              <button
+                type='button'
+                className={classNames(
+                  'app-titlebar__button app-titlebar__button--search',
+                  isActive && 'app-titlebar__button--active'
+                )}
+                onClick={onClick}
+                aria-label={historySearchTooltip}
+                title={historySearchTooltip}
+              >
+                <Search theme='outline' size={16} fill='currentColor' strokeWidth={desktopIconStroke} />
+              </button>
+            )}
+          />
         )}
         {showHistoryNav && (
           <>

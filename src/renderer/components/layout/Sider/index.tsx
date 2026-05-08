@@ -168,14 +168,16 @@ const Sider: React.FC<SiderProps> = ({ onSessionClick, collapsed = false }) => {
               onNewChat={handleNewChat}
               onToggleBatchMode={() => setIsBatchMode((prev) => !prev)}
             />
-            {/* Search entry */}
-            <SiderSearchEntry
-              isMobile={isMobile}
-              collapsed={collapsed}
-              siderTooltipProps={siderTooltipProps}
-              onConversationSelect={handleConversationSelect}
-              onSessionClick={onSessionClick}
-            />
+            {/* Desktop search lives in the titlebar; mobile keeps the full-width entry. */}
+            {isMobile && (
+              <SiderSearchEntry
+                isMobile={isMobile}
+                collapsed={collapsed}
+                siderTooltipProps={siderTooltipProps}
+                onConversationSelect={handleConversationSelect}
+                onSessionClick={onSessionClick}
+              />
+            )}
             {/* Scheduled tasks nav entry - fixed above scroll */}
             <SiderScheduledEntry
               isMobile={isMobile}
