@@ -17,6 +17,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ipcBridge } from '@/common';
 import { TEAM_MODE_ENABLED } from '@/common/config/constants';
 import WindowControls from '../WindowControls';
+import SidebarToggleIcon from '../SidebarToggleIcon';
 import ConversationSearchPopover from '@renderer/pages/conversation/GroupedHistory/ConversationSearchPopover';
 import { WORKSPACE_STATE_EVENT, dispatchWorkspaceToggleEvent } from '@renderer/utils/workspace/workspaceEvents';
 import type { WorkspaceStateDetail } from '@renderer/utils/workspace/workspaceEvents';
@@ -39,35 +40,6 @@ const AionLogoMark: React.FC = () => (
     ></path>
     <circle cx='40' cy='46' r='3' fill='currentColor'></circle>
     <path d='M18 50 Q40 70 62 50' stroke='currentColor' strokeWidth='3.5' fill='none' strokeLinecap='round'></path>
-  </svg>
-);
-
-// Claude-desktop-style sidebar toggle icon: a rounded rectangle with a vertical divider
-// near the left edge, indicating a collapsible side panel. Rendered as inline SVG since
-// @icon-park doesn't ship this exact shape.
-//
-// Uses a 48-unit viewBox to match @icon-park's stroke scale, so passing the same
-// `strokeWidth` value here and to @icon-park icons produces visually identical lines.
-//
-// The rect spans y=10..38 (height 28), slightly taller than @icon-park's
-// ArrowLeft/ArrowRight (which span y=12..36) so the sidebar icon reads a
-// touch larger. The rect remains centered at y=24, matching the arrows'
-// centerline so all three icons stay on the same visual baseline.
-const SidebarIcon: React.FC<{ size?: number; strokeWidth?: number }> = ({ size = 18, strokeWidth = 4 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox='0 0 48 48'
-    fill='none'
-    stroke='currentColor'
-    strokeWidth={strokeWidth}
-    strokeLinecap='round'
-    strokeLinejoin='round'
-    aria-hidden='true'
-    focusable='false'
-  >
-    <rect x='6' y='10' width='36' height='28' rx='5' />
-    <line x1='18' y1='10' x2='18' y2='38' />
   </svg>
 );
 
@@ -127,6 +99,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
   const backToChatTooltip = t('common.back', { defaultValue: 'Back to Chat' });
   const isSettingsRoute = location.pathname.startsWith('/settings');
   const iconSize = layout?.isMobile ? 24 : 18;
+  const historySearchIconSize = layout?.isMobile ? iconSize : 16;
   // Desktop uses slimmer strokes to match macOS-native chrome aesthetics;
   // mobile keeps the default weight so icons stay legible at larger sizes.
   const desktopIconStroke = layout?.isMobile ? undefined : 2.5;
@@ -286,7 +259,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
     if (!isMacRuntime || !showSiderToggle) return {};
     // macOS: reserve native traffic lights plus a small safety gap before custom controls.
     // Mobile keeps its own layout (no traffic lights).
-    const marginLeft = layout?.isMobile ? '0px' : '62px';
+    const marginLeft = layout?.isMobile ? '0px' : 'var(--sider-chrome-menu-offset)';
     return {
       marginLeft,
     };
@@ -330,7 +303,7 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
                 <MenuFold theme='outline' size={iconSize} fill='currentColor' />
               )
             ) : (
-              <SidebarIcon size={iconSize} strokeWidth={desktopIconStroke} />
+              <SidebarToggleIcon size={iconSize} />
             )}
           </button>
         )}
@@ -348,7 +321,12 @@ const Titlebar: React.FC<TitlebarProps> = ({ workspaceAvailable }) => {
                 aria-label={historySearchTooltip}
                 title={historySearchTooltip}
               >
-                <Search theme='outline' size={16} fill='currentColor' strokeWidth={desktopIconStroke} />
+                <Search
+                  theme='outline'
+                  size={historySearchIconSize}
+                  fill='currentColor'
+                  strokeWidth={desktopIconStroke}
+                />
               </button>
             )}
           />
