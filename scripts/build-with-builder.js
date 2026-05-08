@@ -14,9 +14,6 @@ const { execSync, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-// prepareBundledBun was retired once backend bundled its own bun runtime.
-// The scripts/prepareBundledBun.js wrapper is kept for legacy tooling but no
-// longer invoked during desktop packaging — see handoff for cleanup TODO.
 
 // DMG retry logic for macOS: detects DMG creation failures by checking artifacts
 // (.app exists but .dmg missing) and retries only the DMG step using
@@ -458,11 +455,7 @@ try {
   const prepareAionuiBackend = require('./prepareAionuiBackend');
   prepareAionuiBackend();
 
-  // 5a. bundled-bun step removed — backend now ships its own bun runtime.
-  // shellEnv / electron-builder.yml still reference bundled-bun paths; those
-  // will be cleaned up in a follow-up when the runtime consumers migrate.
-
-  // 5b. Prepare hub resources (index.json + extension zips for offline fallback)
+  // 6. Prepare hub resources (index.json + extension zips for offline fallback)
   execSync('node scripts/prepareHubResources.js', { stdio: 'inherit', env: process.env });
 
   // 6. 运行 electron-builder 生成分发包（DMG/ZIP/EXE等）

@@ -4,8 +4,6 @@ const path = require('path');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
 const { prepareAionuiBackend } = require('../packages/shared-scripts/src/prepare-aionui-backend.js');
-// prepareBundledBun retired: backend now ships its own bun runtime.
-// See handoff for full cleanup TODO.
 
 const projectRoot = path.resolve(__dirname, '..');
 const platform = process.env.PACK_PLATFORM || process.platform;
@@ -34,9 +32,7 @@ prepareAionuiBackend({
   allowMissing: process.env.AIONUI_BACKEND_ALLOW_MISSING === '1',
 });
 
-// 2. bundled-bun step skipped — backend ships its own bun runtime.
-
-// 3. Create staging dir
+// 2. Create staging dir
 console.log('3. Creating staging dir...');
 const stagingDir = path.join(distDir, 'staging');
 fs.rmSync(stagingDir, { recursive: true, force: true });
@@ -91,8 +87,6 @@ if (fs.existsSync(backendSrc)) {
   console.warn(`⚠️ Backend bundle dir missing at ${backendSrc}, creating empty placeholder`);
   fs.mkdirSync(backendDest, { recursive: true });
 }
-
-// bundled-bun no longer copied — backend ships its own bun runtime.
 
 // 8. Create tarball
 fs.mkdirSync(distDir, { recursive: true });

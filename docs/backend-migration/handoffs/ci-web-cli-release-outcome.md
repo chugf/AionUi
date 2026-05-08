@@ -43,18 +43,11 @@ install-web.sh
 ## 未解决的 TODO
 
 - **单元测试(`bunx vitest run`)在 3 个 code-quality job 中都被临时注释**(`build-and-release.yml`、`pack-web-cli.yml`、`_build-reusable.yml`)。原因:M1-M9 合入后仓库累积了 168 个 failing test / 49 个 failing test file,按用户要求暂时跳过以解除 release 通道阻塞。**必须尽快修**:搜 `Run unit tests` 的注释块,跟同步修复全仓单测一起恢复;不要让这个临时状态长期化
-- **bundled-bun 清理未完成**:backend 已自带 bun runtime,`prepareBundledBun` 逻辑作废。本次只摘除了打包阻碍(`scripts/build-with-builder.js` 和 `scripts/pack-web-cli.js` 不再调用 prepare/copy),但仍残留的点需要后续统一清理:
-  - `scripts/prepareBundledBun.js`(CLI wrapper,未删)
-  - `scripts/prepareBundledBun.js.bak`(旧实现备份)
-  - `packages/shared-scripts/src/prepare-bundled-bun.js`(核心下载逻辑)
-  - `packages/desktop/electron-builder.yml:112-113` 的 `bundled-bun` extraResources
-  - `packages/desktop/src/process/utils/shellEnv.ts` 对 `resources/bundled-bun/` 的 runtime 读取(确认 backend 真自带后再删)
-  - `.gitignore:201` 的 `resources/bundled-bun`
-  - `tests/unit/prepareBundledBun.test.ts` 和 `tests/integration/bundled-bun-packaged.test.ts`
-  - `vitest.config.ts:61` coverage include 里的 `scripts/prepareBundledBun.js`
-  - `package.json` 的 `test:packaged:bun` script(`tests/integration/bundled-bun-packaged.test.ts`)
+- **bundled-bun runtime 代码未清理**:backend 已自带 bun runtime,`prepareBundledBun` 在打包链上已全线移除(脚本/test/electron-builder/vitest/CI step 均已删除)。**仅剩 `packages/desktop/src/process/utils/shellEnv.ts:34-42` 的 `getBundledBunDir()` 及其 2 处 consumer**(行 416-418 / 565-567)需要后续确认 backend 真的提供 bun 后一并移除。
+  - 当前行为:`getBundledBunDir()` 在 dmg 里找不到 `resources/bundled-bun/`,返回 null,consumer 自动 fallback 到系统 PATH,**不 crash**
+  - `.gitignore:201` 的 `resources/bundled-bun` 条目保留,防止本地 dev 误提交这个目录
 - **`AIONUI_BACKEND_ALLOW_MISSING='1'` 仍硬编码**(`_build-reusable.yml:312`、`pack-web-cli.js:32` 通过 env):等 `iOfficeAI/aionui-backend` 的 Release CI 稳定后,改为按分支区分(main / tag 硬失败,feature 分支放行)。届时全仓搜 `AIONUI_BACKEND_ALLOW_MISSING` 一次性清理
-- **`bin/aionui-web.js` 的 shebang 依赖**:当前依赖用户本机 Node(install-web.sh:315 给 `bin/aionui-web.js` 加 `+x` 并软链)。tarball 内虽自带 `bundled-bun`,但运行时未必走它。需在无 Node 的 Linux 机上实测一次 `./aionui-web start` 能否启动;如果不能,另起 task 改 shebang 或换 bash wrapper(超出本 plan 范围)
+- ~~`bin/aionui-web.js` 的 shebang 依赖~~:**已解决**。现在 tarball 里是 `bun build --compile` 产的单文件 mach-o/ELF/PE 可执行,~60MB,自包含 bun runtime,用户无需 Node。入口改为 `./aionui-web`(不是 `.js`)
 - **Windows tarball 用 `.tar.gz` 而非 `.zip`**:与设计文档 G 节 `*.zip` 的描述有出入,以 `pack-web-cli.js` 现有行为为准
 - **本地 dry-run 脚本无法在 macOS 默认 bash 3.2 跑**:`prepare-release-assets.sh` 用了 `mapfile`,需要 bash 4+。CI(ubuntu-latest)上是 bash 5,不受影响;本地验证请用 homebrew bash 或 Docker
 
